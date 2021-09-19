@@ -20,6 +20,7 @@
  */
 #include "open_evse.h"
 
+
 #ifdef FT_ENDURANCE
 int g_CycleCnt = -1;
 long g_CycleHalfStart;
@@ -157,6 +158,7 @@ J1772EVSEController::J1772EVSEController() :
 #ifdef STATE_TRANSITION_REQ_FUNC
   m_StateTransitionReqFunc = NULL;
 #endif // STATE_TRANSITION_REQ_FUNC
+
 }
 
 void J1772EVSEController::SaveSettings()
@@ -2179,14 +2181,71 @@ void J1772EVSEController::SetVoltmeter(uint16_t scale,uint32_t offset)
   eeprom_write_dword((uint32_t*)EOFS_VOLT_OFFSET,offset);
 }
 
+#include <limits.h>
+//#include <Filters.h> 
+//const float LineFrequency = 60;
+//const float windowLength = 4.0/LineFrequency;     // how long to average the signal, for statistist
+
+// 35 ms is just a bit longer than 1.5 cycles at 50 Hz
+#define VOLTMETER_POLL_INTERVAL (35)
+
+// for Std Deviation method
+//#define STD_VOLT_SCALE_FACTOR (1.84993423330613)
+//#define STD_VOLT_OFFSET (-2.35032801701612)
+
+// for sine 0.707 method
+#define VOLT_SCALE_FACTOR (0.888279753851502)
+#define VOLT_OFFSET (-1.41187514138238)
+
+
+
 uint32_t J1772EVSEController::ReadVoltmeter()
 {
-  unsigned int peak = 0;
+  int Sensor = 0; //Sensor analog input, here it's A3
+//  Serial.print("Windowlength= "); Serial.println(windowLength);
+//  inputStats.setWindowSecs( windowLength);
+//  inputStats.setInitialValue( 0 ); // start with zero
+
+  int max = INT_MIN;
+  int min = INT_MAX;
+
+
+//  for(uint32_t start_time = millis(); (millis() - start_time) < windowLength*1000; ) {
   for(uint32_t start_time = millis(); (millis() - start_time) < VOLTMETER_POLL_INTERVAL; ) {
-    unsigned int val = adcVoltMeter.read();
-    if (val > peak) peak = val;
+    Sensor = adcVoltMeter.read();  // read the analog in value:
+    if (Sensor > max) max = Sensor;
+    if (Sensor < min) min = Sensor;
+
+//    inputStats.input(Sensor);  // log to Stats function
+//    Serial.println( Sensor);
   }
-  m_Voltage = ((uint32_t)peak) * ((uint32_t)m_VoltScaleFactor) + m_VoltOffset;
+
+       //Serial.println(max-min);
+//  float Voltage = (float)STD_VOLT_OFFSET + (float)STD_VOLT_SCALE_FACTOR * (float)inputStats.sigma();
+  float Voltage = (float)VOLT_OFFSET + (float)VOLT_SCALE_FACTOR * 0.707 * (float)(max-min);
+
+  // convert and IIR filter
+  m_Voltage=m_Voltage+1/64.0*(Voltage*1000+0.5-m_Voltage);
+
+//      Serial.print("Max="); Serial.print (max);
+//      Serial.print(" ");
+//      Serial.print("Min="); Serial.print(min);
+//      Serial.print(" ");
+
+//      Serial.print( "\tVoltage: " );
+//      Serial.print( Voltage );
+//      Serial.print(" ");
+//      Serial.print( m_Voltage );
+//      Serial.println( "" );
+
+//      }
+  
+//  unsigned int peak = 0;
+//  for(uint32_t start_time = millis(); (millis() - start_time) < VOLTMETER_POLL_INTERVAL; ) {
+//    unsigned int val = adcVoltMeter.read();
+//    if (val > peak) peak = val;
+//  }
+//  m_Voltage = ((uint32_t)peak) * ((uint32_t)m_VoltScaleFactor) + m_VoltOffset;
   return m_Voltage;
 }
 #endif // VOLTMETER

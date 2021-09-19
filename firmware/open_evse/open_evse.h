@@ -41,7 +41,7 @@
 #define clrBits(flags,bits) (flags &= ~(bits))
 
 #ifndef VERSION
-#define VERSION "7.1.3"
+#define VERSION "7.1.35"
 #endif // !VERSION
 
 #include "Language_default.h"   //Default language should always be included as bottom layer
@@ -142,6 +142,18 @@ extern AutoCurrentCapacityController g_ACCController;
 //#define DEFAULT_VOLT_OFFSET (46800)     // calibrated for Craig K OpenEVSE II build
 #define DEFAULT_VOLT_OFFSET (12018)     // calibrated for lincomatic's OEII
 #endif // OPENEVSE_2
+
+// Support for Chuck Kamas' modification to the UL OpenEVSE board, which has alternate wiring for a voltmeter for L1/L2.
+#define OPENEVSE_CCK
+#ifdef OPENEVSE_CCK
+
+#define DEFAULT_VOLT_SCALE_FACTOR (1)
+#define DEFAULT_VOLT_OFFSET (0)
+
+// If the AC voltage is > 150000 mV, then it's L2. Else, L1.
+#define L2_VOLTAGE_THRESHOLD (150000)
+#define VOLTMETER
+#endif // OPENEVSE_CCK
 
 // GFI support
 #define GFI
@@ -433,7 +445,7 @@ extern AutoCurrentCapacityController g_ACCController;
 #ifdef VOLTMETER
 // N.B. Note, ADC2 is already used as PP_PIN so beware of potential clashes
 // voltmeter pin is ADC2 on OPENEVSE_2
-#define VOLTMETER_PIN 2 // analog AC Line voltage voltmeter pin ADCx
+#define VOLTMETER_PIN 3 // analog AC Line voltage voltmeter pin ADCx
 #endif // VOLTMETER
 #ifdef OPENEVSE_2
 // This pin must match the last write to CHARGING_PIN, modulo a delay. If

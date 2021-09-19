@@ -260,6 +260,7 @@ class J1772EVSEController {
 #ifdef VOLTMETER
   uint16_t m_VoltScaleFactor;
   uint32_t m_VoltOffset;
+//  RunningStatistics inputStats;                //Easy life lines, actual calculation of the RMS requires a load of coding 
 #endif // VOLTMETER
   uint32_t m_Voltage; // mV
 
