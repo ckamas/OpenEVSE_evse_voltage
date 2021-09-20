@@ -1,3 +1,6 @@
+9/20/2021 updated to read the AC mains voltage using peak to peak method. Tried the RMS/Std Dev. method and found it did not work. summize that RMS took to many cycles to complete.  PP is accurate within two volts
+
+
 Firmware for OpenEVSE: Open Source Hardware J1772 Electric Vehicle Supply Equipment
 
 NOTES:
